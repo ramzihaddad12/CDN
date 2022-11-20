@@ -1,1 +1,41 @@
 #!/bin/bash
+
+# Citation: https://www.baeldung.com/linux/use-command-line-arguments-in-bash-script
+while getopts p:o:n:u:i: args
+do
+	case $args in
+		p) port=$OPTARG;;
+		o) origin=$OPTARG;;
+		n) name=$OPTARG;;
+		u) username=$OPTARG;;
+		i) keyfile=$OPTARG;;
+		?) exit 1;;
+	esac
+done
+
+dns_server=proj4-dns.5700.network
+replica_server=proj4-repl1.5700.network
+
+# Deploy DNS server
+echo "Starting deployment of DNS Server..."
+
+# Managing dns directory
+ssh -i $keyfile $username@$dns_server "rm -rf ~/dns; mkdir ~/dns/"
+
+# Secure copying over the needed files 
+scp -i $keyfile dnsserver dnsserver.py constants.py $username@$dns_server:~/dns/
+
+echo "Successfully deployed DNS Server!!"
+
+echo "--------------------------------------------------------"
+
+# Deploy Replica server
+echo "Starting deployment of Replica Server..."
+
+#  Managing dns directory
+ssh -i $keyfile $username@$replica_server "rm -rf ~/http; mkdir ~/http/"
+
+# Secure copying over the needed files 
+scp -i $keyfile httpserver httpserver.py constants.py pageviews.csv $username@$replica_server:~/http/
+
+echo "Successfully deployed Replica Server!!"

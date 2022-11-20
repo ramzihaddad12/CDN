@@ -1,1 +1,42 @@
 #!/bin/bash
+
+# Citation: https://www.baeldung.com/linux/use-command-line-arguments-in-bash-script
+while getopts p:o:n:u:i: args
+do
+	case $args in
+		p) port=$OPTARG;;
+		o) origin=$OPTARG;;
+		n) name=$OPTARG;;
+		u) username=$OPTARG;;
+		i) keyfile=$OPTARG;;
+		?) exit 1;;
+	esac
+done
+
+dns_server=proj4-dns.5700.network
+replica_server=proj4-repl1.5700.network
+
+# Deploy DNS server
+echo "Stopping DNS Server..."
+
+# Kill all 
+ssh -i $keyfile $username@$dns_server "killall -u $username dnsserver"
+ssh -i $keyfile $username@$dns_server "killall -u $username python3"
+
+# Remove files
+ssh -i $keyfile $username@$dns_server "rm -rf ~/dns"
+
+echo "Successfully stopped DNS Server!!"
+
+echo "--------------------------------------------------------"
+
+# Deploy Replica server
+echo "Stopping Replica Server..."
+
+# Kill all 
+ssh -i $keyfile $username@$replica_server "killall -u $username httpserver"
+ssh -i $keyfile $username@$replica_server "killall -u $username python3"
+
+# Remove files
+ssh -i $keyfile $username@$dns_server "rm -rf ~/http"
+echo "Successfully stopped Replica Server!!"

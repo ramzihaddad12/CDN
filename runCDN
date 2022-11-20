@@ -1,1 +1,35 @@
 #!/bin/bash
+
+# Citation: https://www.baeldung.com/linux/use-command-line-arguments-in-bash-script
+while getopts p:o:n:u:i: args
+do
+	case $args in
+		p) port=$OPTARG;;
+		o) origin=$OPTARG;;
+		n) name=$OPTARG;;
+		u) username=$OPTARG;;
+		i) keyfile=$OPTARG;;
+		?) exit 1;;
+	esac
+done
+
+dns_server=proj4-dns.5700.network
+replica_server=proj4-repl1.5700.network
+
+# Deploy DNS server
+echo "Starting DNS Server..."
+
+# Run script
+ssh -i $keyfile $username@$dns_server "cd dns; nohup ./dnsserver -p $port -n $name > /dev/null 2>&1 &"
+
+echo "Successfully started DNS Server!!"
+
+echo "--------------------------------------------------------"
+
+# Deploy Replica server
+echo "Starting Replica Server..."
+
+# Run script
+ssh -i $keyfile $username@$replica_server "cd http; nohup ./httpserver -p $port -o $origin > /dev/null 2>&1 &"
+
+echo "Successfully started Replica Server!!"
