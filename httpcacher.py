@@ -2,15 +2,14 @@ import csv
 import os
 import zlib
 import requests
-import utils
 import argparse
+from constants import * 
 
 
-# CONSTANTS
-SERVER_PORT = 8080
-CACHE_SIZE = 20000000
 CACHE_PATH = os.getcwd() + '/cache'
 
+def get_full_url(host, port, uri) -> str:
+    return 'http://' + host + ':' + str(port) + '/' + uri
 
 class Cacher:
 	def __init__(self, hostname):
@@ -18,7 +17,7 @@ class Cacher:
 		self.unused_cache = CACHE_SIZE
 
 	# parse pageviews and populate the cache
-	def populate(self): 
+	def cache_data(self): 
 		# make directory if not already exists
 		if not os.path.exists(CACHE_PATH):
 			os.mkdir(CACHE_PATH)
@@ -28,9 +27,9 @@ class Cacher:
 			page_popularities = csv.reader(file)
 			for page in page_popularities:
 				# send request for page
-				rank = page[0]
-				resp = session.get(
-						utils.build_request(self.hostname, SERVER_PORT, rank))
+				rank = page[0] #TODO: fix
+				
+				resp = session.get('http://' + self.hostname + ':' + str(SERVER_PORT) + '/' + rank)
 
 				# try to add to cache, stop parsing csv if cache full
 				cache_available = self.try_add_to_cache(resp, rank)
@@ -70,5 +69,5 @@ if __name__ == '__main__':
 
     hostname = args.hostname
     cacher = Cacher(hostname)
-    cacher.populate()
+    cacher.cache_data()
 

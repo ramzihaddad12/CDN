@@ -23,7 +23,7 @@ echo "Starting deployment of DNS Server..."
 ssh -i $keyfile $username@$dns_server "rm -rf ~/dns; mkdir ~/dns/"
 
 # Secure copying over the needed files 
-scp -i $keyfile dnsserver dnsserver.py constants.py $username@$dns_server:~/dns/
+scp -i $keyfile dnsserver constants.py $username@$dns_server:~/dns/
 
 echo "Successfully deployed DNS Server!!"
 
@@ -36,6 +36,6 @@ echo "Starting deployment of Replica Server..."
 ssh -i $keyfile $username@$replica_server "rm -rf ~/http; mkdir ~/http/"
 
 # Secure copying over the needed files 
-scp -i $keyfile httpserver httpserver.py constants.py pageviews.csv $username@$replica_server:~/http/
+scp -i $keyfile httpserver constants.py pageviews.csv $username@$replica_server:~/http/
 
 echo "Successfully deployed Replica Server!!"

@@ -1,3 +1,6 @@
+SERVER_PORT = 8080
+CACHE_SIZE = 20000000
+
 port_number = 25006
 
 dns_server_address = "proj4-dns.5700.network"
