@@ -27,12 +27,12 @@ class Cacher:
 			page_popularities = csv.reader(file)
 			for page in page_popularities:
 				# send request for page
-				rank = page[0] #TODO: fix
+				article = page[2].replace(' ', '_')
 				
-				resp = session.get('http://' + self.hostname + ':' + str(SERVER_PORT) + '/' + rank)
+				resp = session.get('http://' + self.hostname + ':' + str(SERVER_PORT) + '/' + article)
 
 				# try to add to cache, stop parsing csv if cache full
-				cache_available = self.try_add_to_cache(resp, rank)
+				cache_available = self.try_add_to_cache(resp, article)
 				if not cache_available:
 					break
 
@@ -45,16 +45,16 @@ class Cacher:
 			return True
 
 		# if adding resp to cache would overflow, return False
-		resp_compressed = zlib.compress(resp)
-		if self.unused_cache - len(resp_compressed) < 0:
+		compressed_content = zlib.compress(resp.content)
+		if self.unused_cache - len(compressed_content) < 0:
 			return False
 
 		# add to cache, update unused cache size
 		filename = os.path.join(CACHE_PATH, rank)
 		with open(filename, 'wb') as cached_file:
-			cached_file.write(resp_compressed)
+			cached_file.write(compressed_content)
 
-		self.unused_cache -= len(resp_compressed)
+		self.unused_cache -= len(compressed_content)
 		return True
 
 

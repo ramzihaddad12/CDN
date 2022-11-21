@@ -8,7 +8,7 @@ import argparse
 # Function to choose which replica to send the client to
 # ATM, we only have 1 replica, so we have no choice but to send to the 1 available replica
 def choose_which_replica(client):
-    return replicas[0], replicas_by_IP[0]
+    return REPLICAS[0], REPLICAS_BY_IP[0]
 
 # Function that parses incoming DNS packet 
 # Citation: https://pypi.org/project/dnslib/
