@@ -8,9 +8,6 @@ from constants import *
 
 CACHE_PATH = os.getcwd() + '/cache'
 
-def get_full_url(host, port, uri) -> str:
-    return 'http://' + host + ':' + str(port) + '/' + uri
-
 class Cacher:
 	def __init__(self, hostname):
 		self.hostname = hostname
