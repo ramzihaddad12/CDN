@@ -7,10 +7,56 @@ import zlib
 import argparse
 import http.server
 import socket 
+import csv
+import os
+
+CACHE_PATH = os.getcwd() + '/cache'
+
+class Cacher:
+    def __init__(self, hostname):
+        self.hostname = hostname
+        self.cache = {}
+        self.cache_size = 0
+
+    # parse pageviews and populate the cache
+    def cache_data(self):
+        with open('pageviews.csv', 'r') as file, requests.Session() as session:
+            page_popularities = csv.reader(file)
+            for page in page_popularities:
+                # send request for page
+                article = page[2].replace(' ', '_')
+                resp = session.get('http://' + self.hostname + ':' + str(SERVER_PORT) + '/' + article)
+
+                # try to add to cache, stop parsing csv if cache full
+                cache_full = not self.try_add_to_cache(resp, article)
+                if cache_full:
+                    break
+        
+        print(f'cache size: {self.cache_size}')
+        print('||'.join(self.cache.keys()))
+
+
+    # try to add resp to cache
+    # return False if cache is full, True otherwise
+    def try_add_to_cache(self, resp, article):
+        # status code must be in 200s (successful response)
+        if resp.status_code < 200 or resp.status_code >= 300:
+            return True
+
+        # if adding resp to cache would overflow, return False
+        compressed_content = zlib.compress(resp.content)
+        if self.cache_size + len(compressed_content) > MAX_CACHE_SIZE:
+            return False
+
+        # add to cache, update unused cache size
+        self.cache[article] = compressed_content
+        self.cache_size += len(compressed_content)
+
+        return True
+
 # https://docs.python.org/3/library/http.server.html
 class HTTPRequestHandler(socketserver.BaseRequestHandler):
     def do_GET(self):
-        cm = ''# TODO: the dictionary 
         # Send a 204 status code for beacon
         if self.path == beacon_path:
             self.send_response(204)
@@ -26,7 +72,7 @@ class HTTPRequestHandler(socketserver.BaseRequestHandler):
                 page = self.path.split('/')[-1]
 
                 # Needed content not in cache, so we need to get it from origin
-                if page not in cm.CACHE.keys():
+                if page not in cache.CACHE.keys():
                     # Send GET request to the origin server and receive response
                     session = requests.Session()
                     resp = session.get('http://' + origin_server + ':' + str(origin_port) + '/' + page)
@@ -45,7 +91,7 @@ class HTTPRequestHandler(socketserver.BaseRequestHandler):
                   
                 # Needed content in cache, so we need to get it from cache
                 else:
-                    resp = zlib.decompress(cm.CACHE.get(page))
+                    resp = zlib.decompress(cache.CACHE.get(page))
 
                     self.send_response(200)
                     self.send_header('Content-type', 'text/html')
@@ -70,6 +116,7 @@ def this_ip_address():
     s.connect(('8.8.8.8', 80))
 
     return s.getsockname()[0]
+
 if __name__ == '__main__':
     # Parse command and run HTTP server forever
     parser = argparse.ArgumentParser(description='CS5700 CDN Project')
@@ -79,6 +126,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
     server_port = args.p
     origin_name = args.o 
+
+    cacher = Cacher(origin_name)
+    cache = cacher.cache_data() # TODO: the dictionary 
     # https://docs.python.org/3/library/http.server.html
     with http.server.HTTPServer((this_ip_address(), server_port), HTTPRequestHandler) as server:
         server.serve_forever()
