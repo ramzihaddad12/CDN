@@ -58,7 +58,7 @@ class Cacher:
 class HTTPRequestHandler(socketserver.BaseRequestHandler):
     def do_GET(self):
         # Send a 204 status code for beacon
-        if self.path == beacon_path:
+        if self.path == BEACON_PATH:
             self.send_response(204)
             self.send_header('Content-type', 'text/html')
             self.end_headers()
@@ -75,7 +75,7 @@ class HTTPRequestHandler(socketserver.BaseRequestHandler):
                 if page not in cache.keys():
                     # Send GET request to the origin server and receive response
                     session = requests.Session()
-                    resp = session.get('http://' + origin_server + ':' + str(origin_port) + '/' + page)
+                    resp = session.get('http://' + ORIGIN_SERVER + ':' + str(ORIGIN_PORT) + '/' + page)
 
                     # status code must be in 200s (successful response), if not send 404 error
                     if resp.status_code < 200 or resp.status_code >= 300:
@@ -99,8 +99,6 @@ class HTTPRequestHandler(socketserver.BaseRequestHandler):
                     self.end_headers()
 
                     self.wfile.write(resp)
-
-                  
 
             # Send 400 status code
             else:
