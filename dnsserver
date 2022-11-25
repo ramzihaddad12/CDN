@@ -6,9 +6,10 @@ import socketserver
 import argparse
 
 # Function to choose which replica to send the client to
-# ATM, we only have 1 replica, so we have no choice but to send to the 1 available replica
 def choose_which_replica(client):
-    return replicas[0], replicas_by_IP[0]
+    # hardcode for now to test on one replica
+    key = 'proj4-repl1.5700.network'
+    return key, REPLICAS[key]
 
 # Function that parses incoming DNS packet 
 # Citation: https://pypi.org/project/dnslib/
@@ -53,12 +54,12 @@ class UDPRequestHandler(socketserver.BaseRequestHandler):
 if __name__ == '__main__':
     # Parse command and run DNS server forever
     parser = argparse.ArgumentParser(description='CS5700 CDN Project')
-    parser.add_argument("-p", default=port_number, action='store_true', type=int, help="Port Number of DNS Server")
+    parser.add_argument("-p", default=PORT_NUMBER, action='store_true', type=int, help="Port Number of DNS Server")
     parser.add_argument("-n", required=True, action='store_true', type = str, help="Name is the CDN-specific name that your server translates to an IP")
     
     args = parser.parse_args()
     server_port = args.p
     server_name = args.n # name is the CDN-specific name that your server translates to an IP.
     
-    with socketserver.UDPServer((dns_server_ip_address, server_port), UDPRequestHandler) as server:
+    with socketserver.UDPServer((DNS_SERVER_IP_ADDRESS, server_port), UDPRequestHandler) as server:
         server.serve_forever()

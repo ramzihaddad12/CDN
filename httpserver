@@ -10,13 +10,25 @@ import socket
 import csv
 import os
 
-CACHE_PATH = os.getcwd() + '/cache'
+def build_url(uri, host=ORIGIN_SERVER, port=SERVER_PORT):
+    return f'http://{host}:{port}/{uri}'
 
 class Cacher:
     def __init__(self, hostname):
         self.hostname = hostname
         self.cache = {}
-        self.cache_size = 0
+
+        # replicas have *total* memory of 20MB including source code.
+        self.unused_space = MEMORY_LIMIT - (self.get_dir_size() * 2)
+
+    # get size of the source code files (all files in this directory)
+    def get_dir_size(self):
+        size = 0
+        for root, _dirs, files in os.walk(os.getcwd()):
+            for file in files:
+                size += os.stat(os.path.join(root, file)).st_size
+
+        return size
 
     # parse pageviews and populate the cache
     def cache_data(self):
@@ -25,14 +37,13 @@ class Cacher:
             for page in page_popularities:
                 # send request for page
                 article = page[2].replace(' ', '_')
-                resp = session.get('http://' + self.hostname + ':' + str(SERVER_PORT) + '/' + article)
+                resp = session.get(build_url(article, self.hostname))
 
                 # try to add to cache, stop parsing csv if cache full
                 cache_full = not self.try_add_to_cache(resp, article)
                 if cache_full:
                     break
         
-        print(f'cache size: {self.cache_size}')
         print('||'.join(self.cache.keys()))
 
 
@@ -45,12 +56,12 @@ class Cacher:
 
         # if adding resp to cache would overflow, return False
         compressed_content = zlib.compress(resp.content)
-        if self.cache_size + len(compressed_content) > MAX_CACHE_SIZE:
+        if self.unused_space - len(compressed_content) < 0:
             return False
 
         # add to cache, update unused cache size
         self.cache[article] = compressed_content
-        self.cache_size += len(compressed_content)
+        self.unused_space -= len(compressed_content)
 
         return True
 
@@ -58,7 +69,7 @@ class Cacher:
 class HTTPRequestHandler(socketserver.BaseRequestHandler):
     def do_GET(self):
         # Send a 204 status code for beacon
-        if self.path == beacon_path:
+        if self.path == BEACON_PATH:
             self.send_response(204)
             self.send_header('Content-type', 'text/html')
             self.end_headers()
@@ -75,7 +86,7 @@ class HTTPRequestHandler(socketserver.BaseRequestHandler):
                 if page not in cache.keys():
                     # Send GET request to the origin server and receive response
                     session = requests.Session()
-                    resp = session.get('http://' + origin_server + ':' + str(origin_port) + '/' + page)
+                    resp = session.get(build_url(page))
 
                     # status code must be in 200s (successful response), if not send 404 error
                     if resp.status_code < 200 or resp.status_code >= 300:
@@ -100,8 +111,6 @@ class HTTPRequestHandler(socketserver.BaseRequestHandler):
 
                     self.wfile.write(resp)
 
-                  
-
             # Send 400 status code
             else:
                 self.send_error(400, 'Error')
@@ -120,15 +129,15 @@ def this_ip_address():
 if __name__ == '__main__':
     # Parse command and run HTTP server forever
     parser = argparse.ArgumentParser(description='CS5700 CDN Project')
-    parser.add_argument("-p", default=SERVER_PORT, action='store_true', type=int, help="Port Number of HTTP Server")
-    parser.add_argument("-o", required=True, action='store_true', type = str, help="Name of the origin server for your CDN")
+    parser.add_argument("-p", default=SERVER_PORT, action='store', type=int, help="Port Number of HTTP Server")
+    parser.add_argument("-o", default=ORIGIN_SERVER, action='store', type=str, help="Name of the origin server for your CDN")
     
     args = parser.parse_args()
     server_port = args.p
-    origin_name = args.o 
+    origin_name = args.o
 
     cacher = Cacher(origin_name)
-    cache = cacher.cache_data() # TODO: the dictionary 
+    cache = cacher.cache_data()
     # https://docs.python.org/3/library/http.server.html
     with http.server.HTTPServer((this_ip_address(), server_port), HTTPRequestHandler) as server:
         server.serve_forever()
