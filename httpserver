@@ -5,65 +5,33 @@ import socketserver
 import requests
 import zlib
 import argparse
+import socket
 import http.server
-import socket 
-import csv
 import os
+from utils import build_url
 
-def build_url(uri, host=ORIGIN_SERVER, port=SERVER_PORT):
-    return f'http://{host}:{port}/{uri}'
+# Read cached files created by Cacher class
+class CacheReader:
+    CACHE_PATH = os.getcwd() + '/cache'
 
-class Cacher:
-    def __init__(self, hostname):
-        self.hostname = hostname
+    def __init__(self):
+        # cache is <String, Bytes> with Article->Compressed Content
         self.cache = {}
 
-        # replicas have *total* memory of 20MB including source code.
-        self.unused_space = MEMORY_LIMIT - (self.get_dir_size() * 2)
+    # populate cache based on files from /cache
+    def read_cache(self):
+        for article in os.listdir(CacheReader.CACHE_PATH):
+            # open file and add to cache map
+            article_path = os.path.join(CacheReader.CACHE_PATH, article)
+            with open(article_path, 'rb') as file:
+                self.cache[article] = file.read()
 
-    # get size of the source code files (all files in this directory)
-    def get_dir_size(self):
-        size = 0
-        for root, _dirs, files in os.walk(os.getcwd()):
-            for file in files:
-                size += os.stat(os.path.join(root, file)).st_size
+            # remove file from /cache
+            os.remove(article_path)
 
-        return size
+        # remove directory
+        os.rmdir(CacheReader.CACHE_PATH)
 
-    # parse pageviews and populate the cache
-    def cache_data(self):
-        with open('pageviews.csv', 'r') as file, requests.Session() as session:
-            page_popularities = csv.reader(file)
-            for page in page_popularities:
-                # send request for page
-                article = page[2].replace(' ', '_')
-                resp = session.get(build_url(article, self.hostname))
-
-                # try to add to cache, stop parsing csv if cache full
-                cache_full = not self.try_add_to_cache(resp, article)
-                if cache_full:
-                    break
-        
-        print('||'.join(self.cache.keys()))
-
-
-    # try to add resp to cache
-    # return False if cache is full, True otherwise
-    def try_add_to_cache(self, resp, article):
-        # status code must be in 200s (successful response)
-        if resp.status_code < 200 or resp.status_code >= 300:
-            return True
-
-        # if adding resp to cache would overflow, return False
-        compressed_content = zlib.compress(resp.content)
-        if self.unused_space - len(compressed_content) < 0:
-            return False
-
-        # add to cache, update unused cache size
-        self.cache[article] = compressed_content
-        self.unused_space -= len(compressed_content)
-
-        return True
 
 # https://docs.python.org/3/library/http.server.html
 class HTTPRequestHandler(socketserver.BaseRequestHandler):
@@ -136,8 +104,8 @@ if __name__ == '__main__':
     server_port = args.p
     origin_name = args.o
 
-    cacher = Cacher(origin_name)
-    cache = cacher.cache_data()
+    cache_reader = CacheReader()
+    cache = cache_reader.read_cache()
     # https://docs.python.org/3/library/http.server.html
     with http.server.HTTPServer((this_ip_address(), server_port), HTTPRequestHandler) as server:
         server.serve_forever()
