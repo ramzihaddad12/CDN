@@ -6,3 +6,4 @@ default:
 	chmod +x httpcacher
 	chmod +x httpserver
 	chmod +x dnsserver
+	chmod +x replicaselector
