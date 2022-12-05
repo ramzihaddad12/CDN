@@ -21,6 +21,11 @@ def parse_dns_packet(packet):
     incoming_query_name = parsed_incoming_packet.q.qname
     incoming_query_class = parsed_incoming_packet.q.qclass
 
+    print(incoming_query_id)
+    print(incoming_query_type)
+    print(incoming_query_name)
+    print(incoming_query_class)
+
     return incoming_query_id, incoming_query_type, incoming_query_name, incoming_query_class
 
 # Function to get the DNS response containg info about replica server that client should redirect to
@@ -29,8 +34,8 @@ def get_dns_response_packet(packet, client):
     # Parse DNS Packet
     incoming_query_id, incoming_query_type, incoming_query_name, incoming_query_class = parse_dns_packet(packet)
     # Check if query time is A
-    if incoming_query_type != 1:
-        raise Exception("Query should be of type A")
+    # if incoming_query_type != 1:
+    #     raise Exception("Query should be of type A")
     # Choose replica
     chosen_replica, chosen_replica_by_IP = choose_which_replica(client)
 
@@ -54,8 +59,8 @@ class UDPRequestHandler(socketserver.BaseRequestHandler):
 if __name__ == '__main__':
     # Parse command and run DNS server forever
     parser = argparse.ArgumentParser(description='CS5700 CDN Project')
-    parser.add_argument("-p", default=PORT_NUMBER, action='store_true', type=int, help="Port Number of DNS Server")
-    parser.add_argument("-n", required=True, action='store_true', type = str, help="Name is the CDN-specific name that your server translates to an IP")
+    parser.add_argument("-p", default=PORT_NUMBER, action='store', type=int, help="Port Number of DNS Server")
+    parser.add_argument("-n", required=True, action='store', type = str, help="Name is the CDN-specific name that your server translates to an IP")
     
     args = parser.parse_args()
     server_port = args.p

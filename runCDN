@@ -14,22 +14,24 @@ do
 done
 
 dns_server=proj4-dns.5700.network
-replica_server=proj4-repl1.5700.network
+REPLICAS=(proj4-repl1.5700.network proj4-repl2.5700.network proj4-repl3.5700.network proj4-repl4.5700.network proj4-repl5.5700.network proj4-repl6.5700.network proj4-repl7.5700.network)
 
 # Deploy DNS server
 echo "Starting DNS Server..."
 
 # Run script
-ssh -i $keyfile $username@$dns_server "cd dns; nohup ./dnsserver -p $port -n $name > /dev/null 2>&1 &"
+ssh -i $keyfile $username@$dns_server "cd dns; chmod +x dnsserver; nohup ./dnsserver -p $port -n $name > /dev/null 2>&1 &"
 
 echo "Successfully started DNS Server!!"
 
 echo "--------------------------------------------------------"
 
 # Deploy Replica server
-echo "Starting Replica Server..."
+echo "Starting Replica Servers..."
 
-# Run script
-ssh -i $keyfile $username@$replica_server "cd http; nohup ./httpserver -p $port -o $origin > /dev/null 2>&1 &"
-
-echo "Successfully started Replica Server!!"
+for replica_server in "${REPLICAS[@]}"
+do
+	# Run script
+	ssh -i $keyfile $username@$replica_server "cd http; chmod +x httpserver; nohup ./httpserver -p $port -o $origin > /dev/null 2>&1 &"
+done
+echo "Successfully started Replica Servers!!"

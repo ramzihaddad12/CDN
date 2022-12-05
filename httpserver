@@ -34,10 +34,17 @@ class CacheReader:
 
 
 # https://docs.python.org/3/library/http.server.html
-class HTTPRequestHandler(socketserver.BaseRequestHandler):
+class HTTPRequestHandler(http.server.BaseHTTPRequestHandler):
+    global cache
+    cache_reader = CacheReader()
+    cache_reader.read_cache()
+    cache = cache_reader.cache
+
     def do_GET(self):
         # Send a 204 status code for beacon
+        print("in do_GET    ")
         if self.path == BEACON_PATH:
+            print("IN BEACON")
             self.send_response(204)
             self.send_header('Content-type', 'text/html')
             self.end_headers()
@@ -46,6 +53,7 @@ class HTTPRequestHandler(socketserver.BaseRequestHandler):
 
         else:
             path_length =  len(self.path.split('/'))
+            print(self.path.split('/'))
             # We know that the path length should be at most 2           
             if (path_length <= 2):
                 page = self.path.split('/')[-1]
@@ -54,7 +62,7 @@ class HTTPRequestHandler(socketserver.BaseRequestHandler):
                 if page not in cache.keys():
                     # Send GET request to the origin server and receive response
                     session = requests.Session()
-                    resp = session.get(build_url(page))
+                    resp = session.get('http://' + ORIGIN_SERVER + ':' + str(ORIGIN_PORT) + '/' + page)
 
                     # status code must be in 200s (successful response), if not send 404 error
                     if resp.status_code < 200 or resp.status_code >= 300:
@@ -71,6 +79,8 @@ class HTTPRequestHandler(socketserver.BaseRequestHandler):
                 # Needed content in cache, so we need to get it from cache
                 else:
                     resp = zlib.decompress(cache.get(page))
+                    print("CACHED!")
+                    print(resp)
 
                     self.send_response(200)
                     self.send_header('Content-type', 'text/html')
@@ -91,21 +101,22 @@ def this_ip_address():
     # Connect to an 8.8.8.8 address to get the source IP address 
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.connect(('8.8.8.8', 80))
-
-    return s.getsockname()[0]
+    ip_address = s.getsockname()[0]
+    s.close()
+    return ip_address
 
 if __name__ == '__main__':
     # Parse command and run HTTP server forever
     parser = argparse.ArgumentParser(description='CS5700 CDN Project')
     parser.add_argument("-p", default=SERVER_PORT, action='store', type=int, help="Port Number of HTTP Server")
-    parser.add_argument("-o", default=ORIGIN_SERVER, action='store', type=str, help="Name of the origin server for your CDN")
+    parser.add_argument("-o", required=True, action='store', type = str, help="Name of the origin server for your CDN")
     
     args = parser.parse_args()
     server_port = args.p
     origin_name = args.o
 
-    cache_reader = CacheReader()
-    cache = cache_reader.read_cache()
+    
     # https://docs.python.org/3/library/http.server.html
+    print(this_ip_address())
     with http.server.HTTPServer((this_ip_address(), server_port), HTTPRequestHandler) as server:
         server.serve_forever()

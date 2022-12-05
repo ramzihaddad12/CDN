@@ -14,7 +14,7 @@ do
 done
 
 dns_server=proj4-dns.5700.network
-replica_server=proj4-repl1.5700.network
+REPLICAS=(proj4-repl1.5700.network proj4-repl2.5700.network proj4-repl3.5700.network proj4-repl4.5700.network proj4-repl5.5700.network proj4-repl6.5700.network proj4-repl7.5700.network)
 
 # Deploy DNS server
 echo "Starting deployment of DNS Server..."
@@ -30,12 +30,19 @@ echo "Successfully deployed DNS Server!!"
 echo "--------------------------------------------------------"
 
 # Deploy Replica server
-echo "Starting deployment of Replica Server..."
+echo "Starting deployment of Replica Servers..."
 
-#  Managing dns directory
-ssh -i $keyfile $username@$replica_server "rm -rf ~/http; mkdir ~/http/"
+for replica_server in "${REPLICAS[@]}"
+do
+	#  Managing dns directory
+	ssh -i $keyfile $username@$replica_server "rm -rf ~/http; mkdir ~/http/"
 
-# Secure copying over the needed files 
-scp -i $keyfile httpserver constants.py pageviews.csv $username@$replica_server:~/http/
+	# Secure copying over the needed files 
+	scp -i $keyfile httpserver httpcacher constants.py utils.py pageviews.csv $username@$replica_server:~/http/
 
-echo "Successfully deployed Replica Server!!"
+	echo "Caching ... "
+	# Do the caching 
+	ssh -i $keyfile $username@$replica_server "cd http; ./httpcacher -p $port -o $origin"
+done 
+
+echo "Successfully deployed Replica Servers!!"

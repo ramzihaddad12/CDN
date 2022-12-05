@@ -14,7 +14,7 @@ do
 done
 
 dns_server=proj4-dns.5700.network
-replica_server=proj4-repl1.5700.network
+REPLICAS=(proj4-repl1.5700.network proj4-repl2.5700.network proj4-repl3.5700.network proj4-repl4.5700.network proj4-repl5.5700.network proj4-repl6.5700.network proj4-repl7.5700.network)
 
 # Deploy DNS server
 echo "Stopping DNS Server..."
@@ -31,12 +31,15 @@ echo "Successfully stopped DNS Server!!"
 echo "--------------------------------------------------------"
 
 # Deploy Replica server
-echo "Stopping Replica Server..."
+echo "Stopping Replica Servers..."
 
 # Kill all 
 ssh -i $keyfile $username@$replica_server "killall -u $username httpserver"
 ssh -i $keyfile $username@$replica_server "killall -u $username python3"
 
-# Remove files
-ssh -i $keyfile $username@$dns_server "rm -rf ~/http"
-echo "Successfully stopped Replica Server!!"
+for replica_server in "${REPLICAS[@]}"
+do
+	# Remove files
+	ssh -i $keyfile $username@$replica_server "rm -rf ~/http"
+done
+echo "Successfully stopped Replica Servers!!"
