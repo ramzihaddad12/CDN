@@ -23,7 +23,7 @@ echo "Starting deployment of DNS Server..."
 ssh -i $keyfile $username@$dns_server "rm -rf ~/dns; mkdir ~/dns/"
 
 # Secure copying over the needed files 
-scp -i $keyfile dnsserver constants.py $username@$dns_server:~/dns/
+scp -i $keyfile dnsserver constants.py replicaselector.py geoipdata.mmdb $username@$dns_server:~/dns/
 
 echo "Successfully deployed DNS Server!!"
 
