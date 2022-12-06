@@ -1,5 +1,5 @@
 # https://github.com/maxmind/GeoIP2-python
-import geoip2.database
+import geoip2lib.geoip2.database as geoipdb
 import math
 import sys
 import argparse
@@ -9,12 +9,11 @@ from constants import *
 class ReplicaSelector:
     def __init__(self):
         # this is an expensive operation - do as limited as possible
-        self.reader = geoip2.database.Reader('geoipdata.mmdb')
+        self.reader = geoipdb.Reader('geoipdata.mmdb')
 
     def __del__(self):
         # close reader when class is destroyed
         self.reader.close()
-        print('Reader closed!')
 
     # close reader for geo db
     def close(self):
