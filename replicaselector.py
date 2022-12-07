@@ -19,12 +19,10 @@ class ReplicaSelector:
     def close(self):
         self.reader.close()
 
-
     # return (lat, lon) of the given ip_addr
     def get_location(self, ip_addr):
         response = self.reader.city(ip_addr)
         return response.location.latitude, response.location.longitude
-
 
     # https://www.movable-type.co.uk/scripts/latlong.html
     # get distance bewteen two locations (in km) using Haversine formula

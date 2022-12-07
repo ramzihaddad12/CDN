@@ -23,7 +23,7 @@ echo "Starting deployment of DNS Server..."
 ssh -i $keyfile $username@$dns_server "rm -rf ~/dns; mkdir ~/dns/"
 
 # Secure copying over the needed files 
-scp -i $keyfile dnsserver constants.py replicaselector.py geoipdata.mmdb $username@$dns_server:~/dns/
+scp -i $keyfile dnsserver constants.py replicaselector.py geoipdata.mmdb geoip2lib $username@$dns_server:~/dns/
 
 echo "Successfully deployed DNS Server!!"
 
@@ -34,15 +34,15 @@ echo "Starting deployment of Replica Servers..."
 
 for replica_server in "${REPLICAS[@]}"
 do
-	#  Managing dns directory
+	#  Managing http directory
 	ssh -i $keyfile $username@$replica_server "rm -rf ~/http; mkdir ~/http/"
 
 	# Secure copying over the needed files 
-	scp -i $keyfile httpserver httpcacher constants.py utils.py pageviews.csv $username@$replica_server:~/http/
+	scp -i $keyfile httpserver cacher constants.py utils.py pageviews.csv $username@$replica_server:~/http/
 
 	echo "Caching ... "
 	# Do the caching 
-	ssh -i $keyfile $username@$replica_server "cd http; ./httpcacher -p $port -o $origin"
+	ssh -i $keyfile $username@$replica_server "cd http; ./cacher -p $port -o $origin"
 done 
 
 echo "Successfully deployed Replica Servers!!"
