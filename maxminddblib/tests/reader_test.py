@@ -10,7 +10,7 @@ import unittest.mock as mock
 from multiprocessing import Process, Pipe
 from typing import Union, Type
 
-import maxminddb
+import maxminddblib as maxminddb
 
 try:
     import maxminddb.extension

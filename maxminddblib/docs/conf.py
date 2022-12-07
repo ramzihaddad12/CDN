@@ -16,7 +16,7 @@ import sys
 import os
 
 sys.path.insert(0, os.path.abspath(".."))
-import maxminddb
+import maxminddblib as maxminddb
 
 __version__ = maxminddb.__version__
 

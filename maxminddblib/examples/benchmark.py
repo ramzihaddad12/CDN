@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import argparse
-import maxminddb
+import maxminddblib as maxminddb
 import random
 import socket
 import struct

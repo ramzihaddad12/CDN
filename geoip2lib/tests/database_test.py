@@ -11,7 +11,7 @@ sys.path.append("..")
 
 import geoip2.database
 import geoip2.errors
-import maxminddb
+import maxminddblib as maxminddb
 
 try:
     import maxminddb.extension
