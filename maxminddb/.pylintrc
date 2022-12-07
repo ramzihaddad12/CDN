@@ -1,0 +1,4 @@
+[BASIC]
+
+no-docstring-rgx=_.*
+extension-pkg-allow-list=maxminddb.extension
