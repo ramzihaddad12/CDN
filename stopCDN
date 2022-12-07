@@ -33,12 +33,13 @@ echo "--------------------------------------------------------"
 # Stop Replica server
 echo "Stopping Replica Servers..."
 
-# Kill all 
-ssh -i $keyfile $username@$replica_server "killall -u $username httpserver"
-ssh -i $keyfile $username@$replica_server "killall -u $username python3"
 
 for replica_server in "${REPLICAS[@]}"
 do
+	# Kill all 
+	ssh -i $keyfile $username@$replica_server "killall -u $username httpserver"
+	ssh -i $keyfile $username@$replica_server "killall -u $username python3"
+
 	# Remove files
 	ssh -i $keyfile $username@$replica_server "rm -rf ~/http"
 done

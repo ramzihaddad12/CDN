@@ -35,11 +35,6 @@ class UDPRequestHandler(socketserver.BaseRequestHandler):
         incoming_query_name = parsed_incoming_packet.q.qname
         incoming_query_class = parsed_incoming_packet.q.qclass
 
-        print(incoming_query_id)
-        print(incoming_query_type)
-        print(incoming_query_name)
-        print(incoming_query_class)
-
         return incoming_query_id, incoming_query_type, incoming_query_name, incoming_query_class
 
     # Function to get the DNS response containg info about replica server that client should redirect to
@@ -48,8 +43,8 @@ class UDPRequestHandler(socketserver.BaseRequestHandler):
         # Parse DNS Packet
         incoming_query_id, incoming_query_type, incoming_query_name, incoming_query_class = self.parse_dns_packet(packet)
         # Check if query time is A
-        # if incoming_query_type != 1:
-        #     raise Exception("Query should be of type A")
+        if incoming_query_type != 1:
+            raise Exception("Query should be of type A")
         # Choose replica
         chosen_replica, chosen_replica_by_IP = self.choose_which_replica(client_ip)
 
