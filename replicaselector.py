@@ -1,7 +1,5 @@
-#!/usr/bin/env python3
-
 # https://github.com/maxmind/GeoIP2-python
-import geoip2.database
+import geoip2lib.geoip2.database as geoipdb
 import math
 import sys
 import argparse
@@ -11,8 +9,11 @@ from constants import *
 class ReplicaSelector:
     def __init__(self):
         # this is an expensive operation - do as limited as possible
-        self.reader = geoip2.database.Reader('geoip.mmdb')
+        self.reader = geoipdb.Reader('geoipdata.mmdb')
 
+    def __del__(self):
+        # close reader when class is destroyed
+        self.reader.close()
 
     # close reader for geo db
     def close(self):
@@ -56,10 +57,11 @@ class ReplicaSelector:
         client_loc = self.get_location(client_ip)
         
         # placeholder values - assume replica1 is best
-        best_replica = None
+        repl1 = 'proj4-repl1.5700.network'
+        best_replica = (repl1, REPLICAS[repl1])
         min_dist = sys.float_info.max
 
-        # iterate through replicas to find closest to client
+        # iterate through replicas to find closest one to client
         for repl_name, repl_ip in REPLICAS.items():
             repl_loc = self.get_location(repl_ip)
             dist = self.get_distance_between(client_loc, repl_loc)

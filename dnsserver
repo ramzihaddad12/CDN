@@ -4,56 +4,59 @@ from constants import *
 from dnslib import * 
 import socketserver
 import argparse
-
-# Function to choose which replica to send the client to
-def choose_which_replica(client):
-    # hardcode for now to test on one replica
-    key = 'proj4-repl1.5700.network'
-    return key, REPLICAS[key]
-
-# Function that parses incoming DNS packet 
-# Citation: https://pypi.org/project/dnslib/
-def parse_dns_packet(packet):
-    parsed_incoming_packet = DNSRecord.parse(packet)
-    
-    incoming_query_id = parsed_incoming_packet.header.id
-    incoming_query_type = parsed_incoming_packet.q.qtype
-    incoming_query_name = parsed_incoming_packet.q.qname
-    incoming_query_class = parsed_incoming_packet.q.qclass
-
-    print(incoming_query_id)
-    print(incoming_query_type)
-    print(incoming_query_name)
-    print(incoming_query_class)
-
-    return incoming_query_id, incoming_query_type, incoming_query_name, incoming_query_class
-
-# Function to get the DNS response containg info about replica server that client should redirect to
-# Citation: https://pypi.org/project/dnslib/
-def get_dns_response_packet(packet, client):
-    # Parse DNS Packet
-    incoming_query_id, incoming_query_type, incoming_query_name, incoming_query_class = parse_dns_packet(packet)
-    # Check if query time is A
-    # if incoming_query_type != 1:
-    #     raise Exception("Query should be of type A")
-    # Choose replica
-    chosen_replica, chosen_replica_by_IP = choose_which_replica(client)
-
-    # Creating a DNS Response Packet 
-    response_packet = DNSRecord(DNSHeader(id = incoming_query_id, qr=1,aa=1,ra=1), q=DNSQuestion(incoming_query_name, incoming_query_type, incoming_query_class),a=RR(chosen_replica,rdata=A(chosen_replica_by_IP)))
-    
-    return response_packet.pack()
-
+from replicaselector import ReplicaSelector
 
 # https://docs.python.org/3/library/socketserver.html#socketserver.TCPServer
 class UDPRequestHandler(socketserver.BaseRequestHandler):
+    global replica_selector
+    replica_selector = ReplicaSelector()
+
     def handle(self):
         # Data sent to the socket/ data requested
         data = self.request[0].strip()
         socket = self.request[1]
 
-        dns_record = get_dns_response_packet(data, self.client_address[0])
+        dns_record = self.get_dns_response_packet(data, self.client_address[0])
         socket.sendto(dns_record, self.client_address)
+
+
+    # Function to choose which replica to send the client to
+    def choose_which_replica(self, client_ip):
+        # active measurement logic would go here, but for now just geo info
+        return replica_selector.get_closest_replica(client_ip)
+
+    # Function that parses incoming DNS packet 
+    # Citation: https://pypi.org/project/dnslib/
+    def parse_dns_packet(self, packet):
+        parsed_incoming_packet = DNSRecord.parse(packet)
+        
+        incoming_query_id = parsed_incoming_packet.header.id
+        incoming_query_type = parsed_incoming_packet.q.qtype
+        incoming_query_name = parsed_incoming_packet.q.qname
+        incoming_query_class = parsed_incoming_packet.q.qclass
+
+        print(incoming_query_id)
+        print(incoming_query_type)
+        print(incoming_query_name)
+        print(incoming_query_class)
+
+        return incoming_query_id, incoming_query_type, incoming_query_name, incoming_query_class
+
+    # Function to get the DNS response containg info about replica server that client should redirect to
+    # Citation: https://pypi.org/project/dnslib/
+    def get_dns_response_packet(self, packet, client_ip):
+        # Parse DNS Packet
+        incoming_query_id, incoming_query_type, incoming_query_name, incoming_query_class = self.parse_dns_packet(packet)
+        # Check if query time is A
+        # if incoming_query_type != 1:
+        #     raise Exception("Query should be of type A")
+        # Choose replica
+        chosen_replica, chosen_replica_by_IP = self.choose_which_replica(client_ip)
+
+        # Creating a DNS Response Packet 
+        response_packet = DNSRecord(DNSHeader(id = incoming_query_id, qr=1,aa=1,ra=1), q=DNSQuestion(incoming_query_name, incoming_query_type, incoming_query_class),a=RR(chosen_replica,rdata=A(chosen_replica_by_IP)))
+        
+        return response_packet.pack()
 
 
 if __name__ == '__main__':
