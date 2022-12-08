@@ -8,7 +8,7 @@ import inspect
 import os
 from typing import Any, AnyStr, cast, IO, List, Optional, Type, Union
 
-import maxminddb
+import maxminddblib.maxminddb as maxminddb
 
 from maxminddb import (
     MODE_AUTO,
