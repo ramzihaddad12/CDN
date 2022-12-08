@@ -24,8 +24,8 @@ ssh -i $keyfile $username@$dns_server "rm -rf ~/dns; mkdir ~/dns/"
 
 # Secure copying over the needed files 
 scp -i $keyfile dnsserver constants.py replicaselector.py geoipdata.mmdb $username@$dns_server:~/dns/
-scp -i $keyfile -r geoip2lib $username@$dns_server:~/dns/
-scp -i $keyfile -r maxminddblib $username@$dns_server:~/dns/
+scp -i $keyfile -r geoip2 $username@$dns_server:~/dns/
+scp -i $keyfile -r maxminddb $username@$dns_server:~/dns/
 
 echo "Successfully deployed DNS Server!!"
 

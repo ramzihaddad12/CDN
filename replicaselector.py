@@ -1,5 +1,5 @@
 # https://github.com/maxmind/GeoIP2-python
-import geoip2lib.geoip2.database as geoip2db
+import geoip2.database as geoip2db
 import math
 import sys
 import argparse
