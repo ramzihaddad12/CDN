@@ -42,7 +42,7 @@ class UDPRequestHandler(socketserver.BaseRequestHandler):
     def get_dns_response_packet(self, packet, client_ip):
         # Parse DNS Packet
         incoming_query_id, incoming_query_type, incoming_query_name, incoming_query_class = self.parse_dns_packet(packet)
-        # Check if query time is A
+        # Check if query type is A
         if incoming_query_type != 1:
             raise Exception("Query should be of type A")
         # Choose replica
