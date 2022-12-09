@@ -8,6 +8,7 @@ from constants import *
 from utils import build_url, bad_status
 import time
 import argparse
+import urllib.parse
 
 class Cacher:
     CACHE_PATH = os.getcwd() + '/cache'
@@ -37,7 +38,7 @@ class Cacher:
             for page in page_popularities:
                 # send request for page
                 article = page[2].replace(' ', '_')
-                resp = self.get_article(session, article)
+                resp = self.get_article(session, urllib.parse.quote(article))
 
                 # skip adding to cache if bad status
                 if bad_status(resp.status_code):
