@@ -17,7 +17,7 @@ class Cacher:
         self.hostname = hostname
         self.port = port
         # replicas have *total* memory of 20MB including source code.
-        self.memory_used = self.get_dir_size() + 100000 # 0.1 MB of buffer
+        self.memory_used = self.get_dir_size() + 50000 # 50 KB of buffer
 
     # get size of the source code files (all files in this directory)
     def get_dir_size(self):

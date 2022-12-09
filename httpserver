@@ -106,10 +106,10 @@ if __name__ == '__main__':
     parser.add_argument("-o", required=True, action='store', type = str, help="Name of the origin server for your CDN")
     
     args = parser.parse_args()
-    server_port = args.p
-    origin_name = args.o
+    ORIGIN_PORT = args.p
+    ORIGIN_SERVER = args.o
 
     
     # https://docs.python.org/3/library/http.server.html
-    with http.server.HTTPServer((this_ip_address(), server_port), HTTPRequestHandler) as server:
+    with http.server.HTTPServer((this_ip_address(), ORIGIN_PORT), HTTPRequestHandler) as server:
         server.serve_forever()
