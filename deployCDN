@@ -20,9 +20,9 @@ REPLICAS=(proj4-repl1.5700.network proj4-repl2.5700.network proj4-repl3.5700.net
 echo "Starting deployment of DNS Server..."
 
 # Managing dns directory
-ssh -i $keyfile $username@$dns_server "rm -rf ~/dns; mkdir ~/dns/"
+ssh -i $keyfile $username@$dns_server "rm -rf ~/dns; mkdir ~/dns/; cd ~/dns/; wget 'https://ocqxow.dm.files.1drv.com/y4m5tA6rSdFGDEXqMSy-nWAKN8g0DMbHDFX5pMiH_0zudmc9hGvtBdlIMeImzElpDHHX_rlx2o14DI8UiZiDUliAB1P9Gn6nAeI4VFDsL1fBf8r8fjY58Frb2RWkEfHK4YmB_3ac4UoaWK6gDOdr0ohEuLzsu_it6T3ulxFtwNlo7Iu-R_NfC3QRq_5y2wkIuNklTPvXhr_bPa82DNcCvP0oA' -O geoipdata.mmdb"
 
-# Secure copying over the needed files 
+# Secure copying over the needed files
 scp -i $keyfile dnsserver constants.py replicaselector.py geoipdata.mmdb $username@$dns_server:~/dns/
 
 echo "Successfully deployed DNS Server!!"
