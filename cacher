@@ -38,9 +38,9 @@ class Cacher:
             for page in page_popularities:
                 # send request for page
                 article = page[2].replace(' ', '_')
-                resp = self.get_article(session, urllib.parse.quote(article))
+                resp = session.get(build_url(urllib.parse.quote(article), self.hostname, self.port))
 
-                # skip adding to cache if bad status
+                # skip adding to cache if bad status - don't have time to retry
                 if bad_status(resp.status_code):
                     continue
 
@@ -48,18 +48,6 @@ class Cacher:
                 cache_full = not self.try_add_to_cache(resp.content, article)
                 if cache_full:
                     break
-
-
-    # send get request for given article to origin server with retry
-    def get_article(self, session, article, retry_times=2):
-        resp = session.get(build_url(article, self.hostname))
-
-        # Sleep for 1 sec if bad status received and attempt retry
-        if bad_status(resp.status_code) and retry_times > 0:
-            time.sleep(1)
-            return self.get_article(session, article, retry_times - 1)
-        
-        return resp
 
 
     # try to add origin response to cache (must be 200 response)
