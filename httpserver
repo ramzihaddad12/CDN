@@ -8,6 +8,7 @@ import argparse
 import socket
 import http.server
 import os
+import urllib.parse
 from utils import build_url
 
 # Read cached files created by Cacher class
@@ -55,9 +56,22 @@ class HTTPRequestHandler(http.server.BaseHTTPRequestHandler):
             if (path_length <= 2):
                 page = self.path.split('/')[-1]
 
+                raw_in_keys = page in cache.keys()
+                format_in_keys = urllib.parse.quote(page) in cache.keys
+
                 # Needed content not in cache, so we need to get it from origin
-                if page not in cache.keys():
-                    # Send GET request to the origin server and receive response
+                if raw_in_keys or format_in_keys:
+                    page_found = page if raw_in_keys else urllib.parse.quote(page)
+                    # Needed content in cache, so we need to get it from cache
+                    resp = zlib.decompress(cache.get(page_found))
+                    self.send_response(200)
+                    self.send_header('Content-type', 'text/html')
+                    self.send_header('Content-length', str(len(resp)))
+                    self.end_headers()
+
+                    self.wfile.write(resp)
+                else:
+                     # Send GET request to the origin server and receive response
                     session = requests.Session()
                     resp = session.get(build_url(page))
 
@@ -72,16 +86,7 @@ class HTTPRequestHandler(http.server.BaseHTTPRequestHandler):
                         self.end_headers()
 
                         self.wfile.write(resp.content)
-                  
-                # Needed content in cache, so we need to get it from cache
-                else:
-                    resp = zlib.decompress(cache.get(page))
-                    self.send_response(200)
-                    self.send_header('Content-type', 'text/html')
-                    self.send_header('Content-length', str(len(resp)))
-                    self.end_headers()
-
-                    self.wfile.write(resp)
+                    
 
             # Send 400 status code
             else:
