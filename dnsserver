@@ -49,7 +49,7 @@ class UDPRequestHandler(socketserver.BaseRequestHandler):
         chosen_replica, chosen_replica_by_IP = self.choose_which_replica(client_ip)
 
         # Creating a DNS Response Packet 
-        response_packet = DNSRecord(DNSHeader(id = incoming_query_id, qr=1,aa=1,ra=1), q=DNSQuestion(incoming_query_name, incoming_query_type, incoming_query_class),a=RR(chosen_replica,rdata=A(chosen_replica_by_IP)))
+        response_packet = DNSRecord(DNSHeader(id = incoming_query_id, qr=1,aa=1,ra=1), q=DNSQuestion(incoming_query_name, incoming_query_type, incoming_query_class),a=RR('cs5700cdn.example.com',rdata=A(chosen_replica_by_IP)))
         
         return response_packet.pack()
 

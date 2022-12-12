@@ -39,7 +39,7 @@ do
 
 	# Secure copying over the needed files 
 	scp -i $keyfile httpserver constants.py utils.py $username@$replica_server:~/http/
-    scp -i $keyfile -r cache $username@$replica_server:~/http/
+    rsync -i $keyfile -r cache $username@$replica_server:~/http/
 done 
 
 echo "Successfully deployed Replica Servers!!"
