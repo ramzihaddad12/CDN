@@ -1,0 +1,115 @@
+#!/usr/bin/env python3
+
+from constants import *
+import socketserver
+import requests
+import zlib
+import argparse
+import socket
+import http.server
+import os
+from utils import build_url
+
+# Read cached files created by Cacher class
+class CacheReader:
+    CACHE_PATH = os.getcwd() + '/cache'
+
+    def __init__(self):
+        # cache is <String, Bytes> with Article->Compressed Content
+        self.cache = {}
+
+    # populate cache based on files from /cache
+    def read_cache(self):
+        for article in os.listdir(CacheReader.CACHE_PATH):
+            # open file and add to cache map
+            article_path = os.path.join(CacheReader.CACHE_PATH, article)
+            with open(article_path, 'rb') as file:
+                self.cache[article] = file.read()
+
+            # remove file from /cache
+            os.remove(article_path)
+
+        # remove directory
+        os.rmdir(CacheReader.CACHE_PATH)
+
+
+# https://docs.python.org/3/library/http.server.html
+class HTTPRequestHandler(http.server.BaseHTTPRequestHandler):
+    global cache
+    cache_reader = CacheReader()
+    cache_reader.read_cache()
+    cache = cache_reader.cache
+
+    def do_GET(self):
+        # Send a 204 status code for beacon
+        if self.path == BEACON_PATH:
+            self.send_response(204)
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+
+            self.wfile.write('BEACON RESPONSE'.encode())
+
+        else:
+            path_length =  len(self.path.split('/'))
+            # We know that the path length should be at most 2           
+            if (path_length <= 2):
+                page = self.path.split('/')[-1]
+
+                # Needed content not in cache, so we need to get it from origin
+                if page not in cache.keys():
+                    # Send GET request to the origin server and receive response
+                    session = requests.Session()
+                    resp = session.get(build_url(page))
+
+                    # status code must be in 200s (successful response), if not send 404 error
+                    if resp.status_code < 200 or resp.status_code >= 300:
+                       self.send_error(404, '404: NOT FOUND') 
+
+                    else:
+                        self.send_response(200)
+                        self.send_header('Content-type', 'text/html')
+                        self.send_header('Content-length', str(len(resp.content)))
+                        self.end_headers()
+
+                        self.wfile.write(resp.content)
+                  
+                # Needed content in cache, so we need to get it from cache
+                else:
+                    resp = zlib.decompress(cache.get(page))
+                    self.send_response(200)
+                    self.send_header('Content-type', 'text/html')
+                    self.send_header('Content-length', str(len(resp)))
+                    self.end_headers()
+
+                    self.wfile.write(resp)
+
+            # Send 400 status code
+            else:
+                self.send_error(400, 'Error')
+
+
+# Function that gets the source IP address by connecting to another IP address 
+# Citation: https://stackoverflow.com/questions/166506/finding-local-ip-addresses-using-pythons-stdlib
+def this_ip_address():
+
+    # Connect to an 8.8.8.8 address to get the source IP address 
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(('8.8.8.8', 80))
+    ip_address = s.getsockname()[0]
+    s.close()
+    return ip_address
+
+if __name__ == '__main__':
+    # Parse command and run HTTP server forever
+    parser = argparse.ArgumentParser(description='CS5700 CDN Project')
+    parser.add_argument("-p", default=SERVER_PORT, action='store', type=int, help="Port Number of HTTP Server")
+    parser.add_argument("-o", required=True, action='store', type = str, help="Name of the origin server for your CDN")
+    
+    args = parser.parse_args()
+    ORIGIN_PORT = args.p
+    ORIGIN_SERVER = args.o
+
+    
+    # https://docs.python.org/3/library/http.server.html
+    with http.server.HTTPServer((this_ip_address(), ORIGIN_PORT), HTTPRequestHandler) as server:
+        server.serve_forever()

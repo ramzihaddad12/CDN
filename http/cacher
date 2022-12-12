@@ -1,0 +1,83 @@
+#!/usr/bin/env python3
+
+import os
+import requests
+import csv
+import zlib
+from constants import *
+from utils import build_url, bad_status
+import argparse
+import urllib.parse
+
+class Cacher:
+    CACHE_PATH = os.getcwd() + '/cache'
+
+    def __init__(self, port, hostname):
+        self.hostname = hostname
+        self.port = port
+        # replicas have *total* memory of 20MB including source code.
+        self.memory_used = self.get_dir_size() + 5000 # 5 KB of buffer
+
+    # get size of the source code files (all files in this directory, except pageviews)
+    def get_dir_size(self):
+        size = 0
+        for root, _dirs, files in os.walk(os.getcwd()):
+            for file in files:
+                if file not in ('pageviews.csv', 'cacher'):
+                    size += os.stat(os.path.join(root, file)).st_size
+
+        return size
+
+    # parse pageviews and populate the cache with most popular pages until full
+    def cache_data(self):
+        if not os.path.exists(Cacher.CACHE_PATH):
+            os.mkdir(Cacher.CACHE_PATH)
+
+        with open('pageviews.csv', 'r') as pageviews_file, requests.Session() as session:
+            page_popularities = csv.reader(pageviews_file)
+            for page in page_popularities:
+                # send request for page
+                article = page[2].replace(' ', '_')
+                resp = session.get(build_url(urllib.parse.quote(article), self.hostname, self.port))
+
+                # skip adding to cache if bad status - don't have time to retry
+                if bad_status(resp.status_code):
+                    continue
+
+                # try to add to cache, stop parsing csv if cache full
+                cache_full = not self.try_add_to_cache(resp.content, article)
+                if cache_full:
+                    break
+
+
+    # try to add origin response to cache (must be 200 response)
+    # return False if cache is full, True otherwise
+    def try_add_to_cache(self, content, article):
+        # if adding resp to cache would overflow, return False
+        compressed_content = zlib.compress(content)
+        if self.memory_used + len(compressed_content) > MEMORY_LIMIT:
+            return False
+
+        # add to cache, update memory used
+        with open(os.path.join(Cacher.CACHE_PATH, article), 'wb') as cache_file:
+            cache_file.write(compressed_content)
+            self.memory_used += len(compressed_content)
+
+        return True
+
+    
+# run cacher directly
+if __name__ == '__main__':
+    # add -p <port> and -o <origin>
+    parser = argparse.ArgumentParser(description='CS5700 CDN Project')
+    parser.add_argument("-p", default=SERVER_PORT, action='store', type=int, help="Port Number of HTTP Server")
+    parser.add_argument("-o", default=ORIGIN_SERVER, action='store', type=str, help="Name of the origin server for your CDN")
+    args = parser.parse_args()
+
+    # initialize cacher and cache data
+    port = args.p
+    hostname = args.o
+    cacher = Cacher(port, hostname)
+    cacher.cache_data()
+
+    
