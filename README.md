@@ -1,4 +1,4 @@
-# cs5700-project5-python3
+# Content Delivery Network
 
 ## High Level Approach
 Our high level approach revolved around using a caching strategy that prioritizes more popular content and using a geoip database to select the "best" replica to send a client to. We relied on several Python libraries that helped in simplifying the task, such as dnslib, socketserver, and maxminddb. 
